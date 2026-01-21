@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Clock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #94a3b8;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Main Clock */
+        .main-clock {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .main-clock-label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .main-time-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .time-unit {
+            position: relative;
+            width: 100px;
+            height: 120px;
+            overflow: hidden;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .time-unit:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .time-scroll {
+            position: absolute;
+            width: 100%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .time-number {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 4rem;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .time-number.adjacent {
+            color: #374151;
+            font-size: 2.5rem;
+        }
+
+        .time-separator {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 4rem;
+            font-weight: 300;
+            color: #6366f1;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .scroll-hint {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #475569;
+            margin-top: 15px;
+        }
+
+        /* City Clocks Grid */
+        .city-clocks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .city-clocks {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .time-unit {
+                width: 70px;
+                height: 90px;
+            }
+            .time-number {
+                height: 90px;
+                font-size: 2.5rem;
+            }
+            .time-number.adjacent {
+                font-size: 1.5rem;
+            }
+            .time-separator {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .city-clocks {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .city-clock {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .city-clock:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .city-name {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .city-time {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .city-date {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .city-offset {
+            font-size: 0.7rem;
+            color: #6366f1;
+            margin-top: 5px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #1e293b;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header h2 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #6366f1;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .modal-body {
+            max-height: 50vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        .city-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .city-option:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .city-option-name {
+            font-size: 0.95rem;
+        }
+
+        .city-option-country {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .city-option-offset {
+            font-size: 0.8rem;
+            color: #6366f1;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        .reset-btn {
+            display: block;
+            margin: 15px auto 0;
+            padding: 10px 25px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            border-radius: 8px;
+            color: #a5b4fc;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reset-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>World Clock</h1>
+
+        <!-- Main Clock -->
+        <div class="main-clock">
+            <div class="main-clock-label" id="localTimezone">Ora Locale</div>
+            <div class="main-time-display">
+                <div class="time-unit" id="hours" data-unit="hours">
+                    <div class="time-scroll">
+                        <div class="time-number adjacent" data-offset="-1">--</div>
+                        <div class="time-number current">--</div>
+                        <div class="time-number adjacent" data-offset="1">--</div>
+                    </div>
+                </div>
+                <span class="time-separator">:</span>
+                <div class="time-unit" id="minutes" data-unit="minutes">
+                    <div class="time-scroll">
+                        <div class="time-number adjacent" data-offset="-1">--</div>
+                        <div class="time-number current">--</div>
+                        <div class="time-number adjacent" data-offset="1">--</div>
+                    </div>
+                </div>
+            </div>
+            <p class="scroll-hint">Clicca e scorri per modificare l'ora</p>
+            <button class="reset-btn" id="resetBtn">Ripristina Ora Attuale</button>
+        </div>
+
+        <!-- City Clocks -->
+        <div class="city-clocks" id="cityClocks">
+            <!-- Cities will be rendered here -->
+        </div>
+    </div>
+
+    <!-- City Selection Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Seleziona Città</h2>
+                <input type="text" class="search-input" id="citySearch" placeholder="Cerca città...">
+            </div>
+            <div class="modal-body" id="cityList">
+                <!-- Cities will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // World Cities Database with timezone offsets
+        const worldCities = [
+            // Europe
+            { name: "Londra", country: "Regno Unito", timezone: "Europe/London", offset: 0 },
+            { name: "Parigi", country: "Francia", timezone: "Europe/Paris", offset: 1 },
+            { name: "Berlino", country: "Germania", timezone: "Europe/Berlin", offset: 1 },
+            { name: "Roma", country: "Italia", timezone: "Europe/Rome", offset: 1 },
+            { name: "Madrid", country: "Spagna", timezone: "Europe/Madrid", offset: 1 },
+            { name: "Amsterdam", country: "Paesi Bassi", timezone: "Europe/Amsterdam", offset: 1 },
+            { name: "Bruxelles", country: "Belgio", timezone: "Europe/Brussels", offset: 1 },
+            { name: "Vienna", country: "Austria", timezone: "Europe/Vienna", offset: 1 },
+            { name: "Zurigo", country: "Svizzera", timezone: "Europe/Zurich", offset: 1 },
+            { name: "Stoccolma", country: "Svezia", timezone: "Europe/Stockholm", offset: 1 },
+            { name: "Oslo", country: "Norvegia", timezone: "Europe/Oslo", offset: 1 },
+            { name: "Copenaghen", country: "Danimarca", timezone: "Europe/Copenhagen", offset: 1 },
+            { name: "Helsinki", country: "Finlandia", timezone: "Europe/Helsinki", offset: 2 },
+            { name: "Varsavia", country: "Polonia", timezone: "Europe/Warsaw", offset: 1 },
+            { name: "Praga", country: "Repubblica Ceca", timezone: "Europe/Prague", offset: 1 },
+            { name: "Budapest", country: "Ungheria", timezone: "Europe/Budapest", offset: 1 },
+            { name: "Atene", country: "Grecia", timezone: "Europe/Athens", offset: 2 },
+            { name: "Lisbona", country: "Portogallo", timezone: "Europe/Lisbon", offset: 0 },
+            { name: "Dublino", country: "Irlanda", timezone: "Europe/Dublin", offset: 0 },
+            { name: "Mosca", country: "Russia", timezone: "Europe/Moscow", offset: 3 },
+            { name: "Istanbul", country: "Turchia", timezone: "Europe/Istanbul", offset: 3 },
+            { name: "Kiev", country: "Ucraina", timezone: "Europe/Kiev", offset: 2 },
+            { name: "Bucarest", country: "Romania", timezone: "Europe/Bucharest", offset: 2 },
+
+            // Americas
+            { name: "New York", country: "USA", timezone: "America/New_York", offset: -5 },
+            { name: "Los Angeles", country: "USA", timezone: "America/Los_Angeles", offset: -8 },
+            { name: "Chicago", country: "USA", timezone: "America/Chicago", offset: -6 },
+            { name: "Houston", country: "USA", timezone: "America/Chicago", offset: -6 },
+            { name: "Miami", country: "USA", timezone: "America/New_York", offset: -5 },
+            { name: "San Francisco", country: "USA", timezone: "America/Los_Angeles", offset: -8 },
+            { name: "Washington D.C.", country: "USA", timezone: "America/New_York", offset: -5 },
+            { name: "Boston", country: "USA", timezone: "America/New_York", offset: -5 },
+            { name: "Seattle", country: "USA", timezone: "America/Los_Angeles", offset: -8 },
+            { name: "Denver", country: "USA", timezone: "America/Denver", offset: -7 },
+            { name: "Toronto", country: "Canada", timezone: "America/Toronto", offset: -5 },
+            { name: "Vancouver", country: "Canada", timezone: "America/Vancouver", offset: -8 },
+            { name: "Montreal", country: "Canada", timezone: "America/Montreal", offset: -5 },
+            { name: "Città del Messico", country: "Messico", timezone: "America/Mexico_City", offset: -6 },
+            { name: "Buenos Aires", country: "Argentina", timezone: "America/Argentina/Buenos_Aires", offset: -3 },
+            { name: "San Paolo", country: "Brasile", timezone: "America/Sao_Paulo", offset: -3 },
+            { name: "Rio de Janeiro", country: "Brasile", timezone: "America/Sao_Paulo", offset: -3 },
+            { name: "Lima", country: "Perù", timezone: "America/Lima", offset: -5 },
+            { name: "Bogotà", country: "Colombia", timezone: "America/Bogota", offset: -5 },
+            { name: "Santiago", country: "Cile", timezone: "America/Santiago", offset: -3 },
+            { name: "Caracas", country: "Venezuela", timezone: "America/Caracas", offset: -4 },
+            { name: "L'Avana", country: "Cuba", timezone: "America/Havana", offset: -5 },
+
+            // Asia
+            { name: "Tokyo", country: "Giappone", timezone: "Asia/Tokyo", offset: 9 },
+            { name: "Pechino", country: "Cina", timezone: "Asia/Shanghai", offset: 8 },
+            { name: "Shanghai", country: "Cina", timezone: "Asia/Shanghai", offset: 8 },
+            { name: "Hong Kong", country: "Cina", timezone: "Asia/Hong_Kong", offset: 8 },
+            { name: "Singapore", country: "Singapore", timezone: "Asia/Singapore", offset: 8 },
+            { name: "Seoul", country: "Corea del Sud", timezone: "Asia/Seoul", offset: 9 },
+            { name: "Mumbai", country: "India", timezone: "Asia/Kolkata", offset: 5.5 },
+            { name: "Nuova Delhi", country: "India", timezone: "Asia/Kolkata", offset: 5.5 },
+            { name: "Bangalore", country: "India", timezone: "Asia/Kolkata", offset: 5.5 },
+            { name: "Bangkok", country: "Thailandia", timezone: "Asia/Bangkok", offset: 7 },
+            { name: "Giacarta", country: "Indonesia", timezone: "Asia/Jakarta", offset: 7 },
+            { name: "Manila", country: "Filippine", timezone: "Asia/Manila", offset: 8 },
+            { name: "Kuala Lumpur", country: "Malesia", timezone: "Asia/Kuala_Lumpur", offset: 8 },
+            { name: "Ho Chi Minh", country: "Vietnam", timezone: "Asia/Ho_Chi_Minh", offset: 7 },
+            { name: "Dubai", country: "EAU", timezone: "Asia/Dubai", offset: 4 },
+            { name: "Abu Dhabi", country: "EAU", timezone: "Asia/Dubai", offset: 4 },
+            { name: "Doha", country: "Qatar", timezone: "Asia/Qatar", offset: 3 },
+            { name: "Riad", country: "Arabia Saudita", timezone: "Asia/Riyadh", offset: 3 },
+            { name: "Tel Aviv", country: "Israele", timezone: "Asia/Tel_Aviv", offset: 2 },
+            { name: "Gerusalemme", country: "Israele", timezone: "Asia/Jerusalem", offset: 2 },
+            { name: "Teheran", country: "Iran", timezone: "Asia/Tehran", offset: 3.5 },
+            { name: "Taipei", country: "Taiwan", timezone: "Asia/Taipei", offset: 8 },
+
+            // Oceania
+            { name: "Sydney", country: "Australia", timezone: "Australia/Sydney", offset: 11 },
+            { name: "Melbourne", country: "Australia", timezone: "Australia/Melbourne", offset: 11 },
+            { name: "Brisbane", country: "Australia", timezone: "Australia/Brisbane", offset: 10 },
+            { name: "Perth", country: "Australia", timezone: "Australia/Perth", offset: 8 },
+            { name: "Auckland", country: "Nuova Zelanda", timezone: "Pacific/Auckland", offset: 13 },
+            { name: "Wellington", country: "Nuova Zelanda", timezone: "Pacific/Auckland", offset: 13 },
+
+            // Africa
+            { name: "Il Cairo", country: "Egitto", timezone: "Africa/Cairo", offset: 2 },
+            { name: "Johannesburg", country: "Sudafrica", timezone: "Africa/Johannesburg", offset: 2 },
+            { name: "Città del Capo", country: "Sudafrica", timezone: "Africa/Johannesburg", offset: 2 },
+            { name: "Lagos", country: "Nigeria", timezone: "Africa/Lagos", offset: 1 },
+            { name: "Nairobi", country: "Kenya", timezone: "Africa/Nairobi", offset: 3 },
+            { name: "Casablanca", country: "Marocco", timezone: "Africa/Casablanca", offset: 1 },
+            { name: "Tunisi", country: "Tunisia", timezone: "Africa/Tunis", offset: 1 },
+            { name: "Algeri", country: "Algeria", timezone: "Africa/Algiers", offset: 1 },
+            { name: "Accra", country: "Ghana", timezone: "Africa/Accra", offset: 0 },
+            { name: "Addis Abeba", country: "Etiopia", timezone: "Africa/Addis_Ababa", offset: 3 }
+        ].sort((a, b) => a.name.localeCompare(b.name));
+
+        // Default cities
+        const defaultCities = [
+            "New York",
+            "Londra",
+            "Tokyo",
+            "Sydney",
+            "Dubai",
+            "San Paolo"
+        ];
+
+        // State
+        let selectedCities = [...defaultCities];
+        let currentSlotIndex = null;
+        let timeOffset = 0; // Offset in minutes from real time
+        let isDragging = false;
+        let dragStartY = 0;
+        let dragUnit = null;
+        let dragStartOffset = 0;
+
+        // Load saved cities from localStorage
+        function loadSavedCities() {
+            const saved = localStorage.getItem('worldClockCities');
+            if (saved) {
+                selectedCities = JSON.parse(saved);
+            }
+        }
+
+        // Save cities to localStorage
+        function saveCities() {
+            localStorage.setItem('worldClockCities', JSON.stringify(selectedCities));
+        }
+
+        // Format time with leading zero
+        function pad(num) {
+            return String(num).padStart(2, '0');
+        }
+
+        // Get time in a specific timezone
+        function getTimeInTimezone(timezone, offsetMinutes = 0) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + offsetMinutes);
+
+            const options = {
+                timeZone: timezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+
+            const dateOptions = {
+                timeZone: timezone,
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+            };
+
+            return {
+                time: now.toLocaleTimeString('it-IT', options),
+                date: now.toLocaleDateString('it-IT', dateOptions)
+            };
+        }
+
+        // Get local time with offset
+        function getLocalTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + timeOffset);
+            return {
+                hours: now.getHours(),
+                minutes: now.getMinutes()
+            };
+        }
+
+        // Update main clock display
+        function updateMainClock() {
+            const time = getLocalTime();
+
+            // Update hours
+            const hoursScroll = document.querySelector('#hours .time-scroll');
+            const hoursNumbers = hoursScroll.querySelectorAll('.time-number');
+            hoursNumbers[0].textContent = pad((time.hours - 1 + 24) % 24);
+            hoursNumbers[1].textContent = pad(time.hours);
+            hoursNumbers[2].textContent = pad((time.hours + 1) % 24);
+
+            // Update minutes
+            const minutesScroll = document.querySelector('#minutes .time-scroll');
+            const minutesNumbers = minutesScroll.querySelectorAll('.time-number');
+            minutesNumbers[0].textContent = pad((time.minutes - 1 + 60) % 60);
+            minutesNumbers[1].textContent = pad(time.minutes);
+            minutesNumbers[2].textContent = pad((time.minutes + 1) % 60);
+
+            // Update timezone label
+            const timezoneLabel = document.getElementById('localTimezone');
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (timeOffset !== 0) {
+                const offsetHours = Math.floor(Math.abs(timeOffset) / 60);
+                const offsetMins = Math.abs(timeOffset) % 60;
+                const sign = timeOffset >= 0 ? '+' : '-';
+                timezoneLabel.textContent = `Ora Modificata (${sign}${offsetHours}h${offsetMins > 0 ? ' ' + offsetMins + 'm' : ''})`;
+            } else {
+                timezoneLabel.textContent = `Ora Locale - ${localTimezone.replace('_', ' ')}`;
+            }
+        }
+
+        // Update city clocks
+        function updateCityClocks() {
+            const container = document.getElementById('cityClocks');
+            container.innerHTML = '';
+
+            selectedCities.forEach((cityName, index) => {
+                const city = worldCities.find(c => c.name === cityName);
+                if (!city) return;
+
+                const timeData = getTimeInTimezone(city.timezone, timeOffset);
+
+                const clockEl = document.createElement('div');
+                clockEl.className = 'city-clock';
+                clockEl.dataset.index = index;
+
+                // Calculate offset from local
+                const localOffset = -new Date().getTimezoneOffset() / 60;
+                const diff = city.offset - localOffset;
+                const diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
+
+                clockEl.innerHTML = `
+                    <div class="city-name">${city.name}</div>
+                    <div class="city-time">${timeData.time}</div>
+                    <div class="city-date">${timeData.date}</div>
+                    <div class="city-offset">UTC${city.offset >= 0 ? '+' : ''}${city.offset} (${diffStr}h)</div>
+                `;
+
+                clockEl.addEventListener('click', () => openCityModal(index));
+                container.appendChild(clockEl);
+            });
+        }
+
+        // Open city selection modal
+        function openCityModal(slotIndex) {
+            currentSlotIndex = slotIndex;
+            document.getElementById('modalOverlay').classList.add('active');
+            document.getElementById('citySearch').value = '';
+            renderCityList('');
+            document.getElementById('citySearch').focus();
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            currentSlotIndex = null;
+        }
+
+        // Render city list in modal
+        function renderCityList(searchTerm) {
+            const container = document.getElementById('cityList');
+            container.innerHTML = '';
+
+            const filtered = worldCities.filter(city =>
+                city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                city.country.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            filtered.forEach(city => {
+                const optionEl = document.createElement('div');
+                optionEl.className = 'city-option';
+                optionEl.innerHTML = `
+                    <div>
+                        <div class="city-option-name">${city.name}</div>
+                        <div class="city-option-country">${city.country}</div>
+                    </div>
+                    <div class="city-option-offset">UTC${city.offset >= 0 ? '+' : ''}${city.offset}</div>
+                `;
+
+                optionEl.addEventListener('click', () => {
+                    selectedCities[currentSlotIndex] = city.name;
+                    saveCities();
+                    updateCityClocks();
+                    closeModal();
+                });
+
+                container.appendChild(optionEl);
+            });
+        }
+
+        // Handle scroll on time units
+        function setupScrollHandlers() {
+            const timeUnits = document.querySelectorAll('.time-unit');
+
+            timeUnits.forEach(unit => {
+                let startY = 0;
+                let currentY = 0;
+                let scrollAmount = 0;
+
+                const handleStart = (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    dragUnit = unit.dataset.unit;
+                    startY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+                    dragStartOffset = timeOffset;
+                    unit.style.cursor = 'grabbing';
+                };
+
+                const handleMove = (e) => {
+                    if (!isDragging || dragUnit !== unit.dataset.unit) return;
+                    e.preventDefault();
+
+                    currentY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+                    const delta = startY - currentY;
+
+                    // Each 40px of drag = 1 unit change
+                    const unitChange = Math.round(delta / 40);
+
+                    if (dragUnit === 'hours') {
+                        timeOffset = dragStartOffset + (unitChange * 60);
+                    } else {
+                        timeOffset = dragStartOffset + unitChange;
+                    }
+
+                    updateMainClock();
+                    updateCityClocks();
+                };
+
+                const handleEnd = () => {
+                    isDragging = false;
+                    dragUnit = null;
+                    unit.style.cursor = 'pointer';
+                };
+
+                // Mouse events
+                unit.addEventListener('mousedown', handleStart);
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+
+                // Touch events
+                unit.addEventListener('touchstart', handleStart, { passive: false });
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('touchend', handleEnd);
+
+                // Wheel event for scroll
+                unit.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const direction = e.deltaY > 0 ? 1 : -1;
+
+                    if (unit.dataset.unit === 'hours') {
+                        timeOffset += direction * 60;
+                    } else {
+                        timeOffset += direction;
+                    }
+
+                    updateMainClock();
+                    updateCityClocks();
+                }, { passive: false });
+            });
+        }
+
+        // Reset to current time
+        function resetTime() {
+            timeOffset = 0;
+            updateMainClock();
+            updateCityClocks();
+        }
+
+        // Initialize
+        function init() {
+            loadSavedCities();
+            updateMainClock();
+            updateCityClocks();
+            setupScrollHandlers();
+
+            // Update every second
+            setInterval(() => {
+                if (!isDragging) {
+                    updateMainClock();
+                    updateCityClocks();
+                }
+            }, 1000);
+
+            // Modal events
+            document.getElementById('modalOverlay').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('modalOverlay')) {
+                    closeModal();
+                }
+            });
+
+            document.getElementById('citySearch').addEventListener('input', (e) => {
+                renderCityList(e.target.value);
+            });
+
+            // Reset button
+            document.getElementById('resetBtn').addEventListener('click', resetTime);
+
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
