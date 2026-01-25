@@ -87,7 +87,6 @@
         .time-scroll {
             position: absolute;
             width: 100%;
-            transform: translateY(-120px); /* Mostra l'elemento centrale (ora corrente) */
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -578,19 +577,19 @@
         function updateMainClock() {
             const time = getLocalTime();
 
-            // Update hours
+            // Update hours - metti l'ora corrente nel primo elemento (quello visibile)
             const hoursScroll = document.querySelector('#hours .time-scroll');
             const hoursNumbers = hoursScroll.querySelectorAll('.time-number');
-            hoursNumbers[0].textContent = pad((time.hours - 1 + 24) % 24);
-            hoursNumbers[1].textContent = pad(time.hours);
-            hoursNumbers[2].textContent = pad((time.hours + 1) % 24);
+            hoursNumbers[0].textContent = pad(time.hours);
+            hoursNumbers[1].textContent = pad((time.hours + 1) % 24);
+            hoursNumbers[2].textContent = pad((time.hours + 2) % 24);
 
-            // Update minutes
+            // Update minutes - metti i minuti correnti nel primo elemento (quello visibile)
             const minutesScroll = document.querySelector('#minutes .time-scroll');
             const minutesNumbers = minutesScroll.querySelectorAll('.time-number');
-            minutesNumbers[0].textContent = pad((time.minutes - 1 + 60) % 60);
-            minutesNumbers[1].textContent = pad(time.minutes);
-            minutesNumbers[2].textContent = pad((time.minutes + 1) % 60);
+            minutesNumbers[0].textContent = pad(time.minutes);
+            minutesNumbers[1].textContent = pad((time.minutes + 1) % 60);
+            minutesNumbers[2].textContent = pad((time.minutes + 2) % 60);
 
             // Update timezone label
             const timezoneLabel = document.getElementById('localTimezone');
