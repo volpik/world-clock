@@ -562,9 +562,20 @@
         function getLocalTime() {
             const now = new Date();
             now.setMinutes(now.getMinutes() + timeOffset);
+
+            // Usa Intl.DateTimeFormat per ottenere l'ora locale corretta
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timeStr = now.toLocaleTimeString('it-IT', {
+                timeZone: localTimezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            const [hours, minutes] = timeStr.split(':').map(Number);
+
             return {
-                hours: now.getHours(),
-                minutes: now.getMinutes()
+                hours: hours,
+                minutes: minutes
             };
         }
 
