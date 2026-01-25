@@ -87,6 +87,7 @@
         .time-scroll {
             position: absolute;
             width: 100%;
+            top: -120px; /* Mostra l'elemento centrale (ora corrente) invece del primo */
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -535,8 +536,8 @@
 
         // Get time in a specific timezone
         function getTimeInTimezone(timezone, offsetMinutes = 0) {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() + offsetMinutes);
+            // Usa il timestamp corrente più l'offset in millisecondi
+            const now = new Date(Date.now() + offsetMinutes * 60000);
 
             const options = {
                 timeZone: timezone,
