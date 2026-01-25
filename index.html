@@ -560,13 +560,16 @@
 
         // Get local time with offset
         function getLocalTime() {
-            // Crea una nuova data con l'offset applicato
-            const now = new Date(Date.now() + timeOffset * 60000);
+            // Ottieni il fuso orario locale del browser
+            const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            // Usa semplicemente getHours e getMinutes che rispettano il fuso orario del sistema
+            // Usa lo stesso metodo delle città che funziona correttamente
+            const timeData = getTimeInTimezone(localTimezone, timeOffset);
+            const [hours, minutes] = timeData.time.split(':').map(Number);
+
             return {
-                hours: now.getHours(),
-                minutes: now.getMinutes()
+                hours: hours,
+                minutes: minutes
             };
         }
 
